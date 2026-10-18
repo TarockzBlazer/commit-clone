@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VivaWall — Mockups v2</title>
+<style>
+  :root{
+    --bg:#1b1e20; --bg2:#232629; --bg3:#2a2e32; --line:#31363b;
+    --fg:#eff0f1; --fg2:#bdc3c7; --fg3:#7f8c8d;
+    --accent:#3daee9; --accent2:#2980b9; --ok:#27ae60;
+    --radius:8px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);
+    font-family:"Noto Sans","Cantarell",system-ui,sans-serif;font-size:14px;line-height:1.4}
+  .wrap{max-width:1200px;margin:0 auto;padding:28px 20px 60px}
+  h1{font-size:24px;margin:0 0 4px}
+  h2{font-size:18px;margin:36px 0 6px;border-bottom:1px solid var(--line);padding-bottom:6px}
+  .sub{color:var(--fg2);margin:0 0 20px}
+  .tag{display:inline-block;font-size:11px;padding:2px 7px;border-radius:20px;background:var(--bg3);color:var(--fg2);border:1px solid var(--line)}
+  .tag.video{color:#f5a623;border-color:#5a4a2a}
+  .tag.image{color:#3daee9;border-color:#2a4a5a}
+  .tag.sound{color:#27ae60;border-color:#2a5a3a}
+  .new{color:#27ae60;font-weight:600}
+
+  .win{background:var(--bg2);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:0 8px 30px rgba(0,0,0,.4)}
+  .titlebar{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg3);border-bottom:1px solid var(--line)}
+  .dot{width:11px;height:11px;border-radius:50%}
+  .titlebar .name{margin-left:8px;color:var(--fg2);font-size:13px}
+  .titlebar .spacer{flex:1}
+
+  .toolbar{display:flex;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line);align-items:center;flex-wrap:wrap}
+  .search{flex:1;min-width:220px;display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:20px;padding:7px 14px;color:var(--fg3)}
+  .search input{border:0;background:transparent;color:var(--fg);outline:0;width:100%;font-size:14px}
+  .chip{border:1px solid var(--line);background:var(--bg);border-radius:20px;padding:5px 12px;color:var(--fg2);font-size:12px;cursor:default}
+  .chip.on{background:var(--accent2);color:#fff;border-color:var(--accent2)}
+
+  .bodyA{display:grid;grid-template-columns:1fr 340px;min-height:440px}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:12px;align-content:start}
+  .thumb{background:var(--bg3);border:1px solid var(--line);border-radius:6px;overflow:hidden;position:relative}
+  .thumb .img{height:92px;background:linear-gradient(135deg,#2c3e50,#4a6572)}
+  .thumb .img.b{background:linear-gradient(135deg,#41295a,#2f0743)}
+  .thumb .img.c{background:linear-gradient(135deg,#134e5e,#71b280)}
+  .thumb .img.d{background:linear-gradient(135deg,#5d4157,#a8caba)}
+  .thumb .img.e{background:linear-gradient(135deg,#232526,#414345)}
+  .thumb .img.f{background:linear-gradient(135deg,#0f2027,#2c5364)}
+  .thumb .meta{padding:7px 9px;display:flex;justify-content:space-between;align-items:center;gap:6px}
+  .thumb .meta span{font-size:11px;color:var(--fg2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .badges{position:absolute;top:6px;left:6px;display:flex;gap:4px}
+  .b{font-size:10px;padding:2px 6px;border-radius:10px;background:rgba(0,0,0,.6);backdrop-filter:blur(2px)}
+
+  .panel{border-left:1px solid var(--line);padding:12px;background:var(--bg2)}
+  .panel h3{margin:0 0 10px;font-size:13px;color:var(--fg2);text-transform:uppercase;letter-spacing:.5px}
+  .monitor{border:1px solid var(--line);border-radius:6px;padding:8px;margin-bottom:10px;background:var(--bg)}
+  .monitor .head{display:flex;justify-content:space-between;font-size:12px;color:var(--fg2);margin-bottom:6px;gap:6px;flex-wrap:wrap}
+  .monitor .screen{height:60px;border-radius:4px;background:linear-gradient(135deg,#134e5e,#71b280);position:relative;overflow:hidden}
+  .monitor .screen.m2{background:linear-gradient(135deg,#41295a,#2f0743)}
+  .monitor .screen .play{position:absolute;right:6px;bottom:5px;font-size:11px;background:rgba(0,0,0,.55);padding:1px 6px;border-radius:8px}
+  .monitor .screen .vol{position:absolute;left:6px;bottom:5px;font-size:11px;background:rgba(0,0,0,.55);padding:1px 6px;border-radius:8px;color:#9be29b}
+
+  .actions{display:flex;flex-direction:column;gap:6px;margin-top:4px}
+  .actions .seg{display:block;text-align:center}
+  .seg{border:1px solid var(--line);background:var(--bg2);color:var(--fg2);padding:7px 12px;border-radius:5px;font-size:12px;cursor:default}
+  .seg.on{background:var(--accent2);color:#fff;border-color:var(--accent2)}
+  .seg.hl{border-color:var(--ok);color:#9be29b}
+
+  .controls{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:14px;background:var(--bg2)}
+  .ctrl{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:12px}
+  .ctrl.hl{border-color:var(--ok)}
+  .ctrl label{display:block;font-size:12px;color:var(--fg2);margin-bottom:8px}
+  .slider{height:6px;border-radius:3px;background:var(--bg3);position:relative;margin:10px 0}
+  .slider .fill{position:absolute;left:0;top:0;bottom:0;width:60%;background:var(--accent);border-radius:3px}
+  .slider .fill.g{background:var(--ok)}
+  .slider .knob{position:absolute;left:60%;top:50%;width:14px;height:14px;border-radius:50%;background:#fff;transform:translate(-50%,-50%)}
+  .row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .focus{height:120px;border-radius:6px;background:linear-gradient(135deg,#0f2027,#2c5364);position:relative;margin-top:8px}
+  .focus .target{position:absolute;left:35%;top:40%;width:22px;height:22px;border:2px solid #fff;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 0 2px rgba(0,0,0,.5)}
+  .hint{color:var(--fg3);font-size:12px;margin-top:6px}
+  .note{background:#20313a;border-left:3px solid var(--accent);padding:10px 14px;border-radius:4px;color:var(--fg2);font-size:13px;margin:14px 0}
+  .note.g{background:#1e3326;border-left-color:var(--ok)}
+  .mute{border:1px solid var(--line);background:var(--bg2);color:var(--fg2);padding:6px 12px;border-radius:5px;font-size:12px}
+  .mute.on{background:#7a2b2b;color:#fff;border-color:#a33}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>VivaWall — mockups <span class="tag">v2</span></h1>
+  <p class="sub">Layout A escolhido. Esta versão adiciona as duas coisas que você pediu.</p>
+
+  <div class="note g">
+    <strong class="new">Mudanças desta versão:</strong>
+    1) no painel de monitores agora tem <strong>Aplicar aos dois</strong>, <strong>Aplicar separadamente</strong> e <strong>Aleatório</strong>;
+    2) os ajustes ganharam um bloco de <strong>Áudio</strong> (volume + mutar), que só aparece quando o wallpaper tem som.
+  </div>
+
+  <!-- ============ LAYOUT A ============ -->
+  <h2>Janela principal — Layout A</h2>
+  <div class="win">
+    <div class="titlebar">
+      <span class="dot" style="background:#e74c3c"></span>
+      <span class="dot" style="background:#f5a623"></span>
+      <span class="dot" style="background:#27ae60"></span>
+      <span class="name">VivaWall</span>
+      <span class="spacer"></span>
+      <span class="tag">fechar = continua rodando</span>
+    </div>
+    <div class="toolbar">
+      <div class="search">🔎 <input value="neon city night" readonly></div>
+      <span class="chip on">Vídeo</span>
+      <span class="chip on">Imagem</span>
+      <span class="chip">Pexels</span>
+      <span class="chip">Pixabay</span>
+      <span class="chip">Wallhaven</span>
+    </div>
+    <div class="bodyA">
+      <div class="grid">
+        <div class="thumb"><div class="badges"><span class="b tag video">▶ vídeo</span><span class="b tag sound">🔊 som</span></div><div class="img"></div><div class="meta"><span>Neon Drive Loop</span><span>4K</span></div></div>
+        <div class="thumb"><div class="badges"><span class="b tag video">▶ vídeo</span><span class="b tag sound">🔊 som</span></div><div class="img b"></div><div class="meta"><span>Purple Rain City</span><span>2K</span></div></div>
+        <div class="thumb"><div class="badges"><span class="b tag image">🖼 imagem</span></div><div class="img c"></div><div class="meta"><span>Forest Mist</span><span>5K</span></div></div>
+        <div class="thumb"><div class="badges"><span class="b tag video">▶ vídeo</span></div><div class="img d"></div><div class="meta"><span>Abstract Flow</span><span>HD</span></div></div>
+        <div class="thumb"><div class="badges"><span class="b tag image">🖼 imagem</span></div><div class="img e"></div><div class="meta"><span>Dark Mountains</span><span>4K</span></div></div>
+        <div class="thumb"><div class="badges"><span class="b tag video">▶ vídeo</span></div><div class="img f"></div><div class="meta"><span>Ocean Waves</span><span>4K</span></div></div>
+      </div>
+      <div class="panel">
+        <h3>Seus monitores</h3>
+        <div class="monitor">
+          <div class="head"><span>DP-1 · 2560×1440 · 200Hz</span><span class="tag">2K</span></div>
+          <div class="screen m2"><span class="play">▶ Purple Rain City</span><span class="vol">🔊 40%</span></div>
+        </div>
+        <div class="monitor">
+          <div class="head"><span>HDMI-1 · 1920×1080 · 180Hz</span><span class="tag">FHD</span></div>
+          <div class="screen"><span class="play">▶ Ocean Waves</span></div>
+        </div>
+        <div class="actions">
+          <span class="seg">Aplicar aos dois</span>
+          <span class="seg on hl">Aplicar separadamente</span>
+          <span class="seg">Aleatório</span>
+        </div>
+        <div class="hint">"Aplicar separadamente" deixa você dar um wallpaper distinto pra cada tela.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ DETAIL CONTROLS ============ -->
+  <h2>Ajustes de um wallpaper (por monitor)</h2>
+  <p class="sub">Velocidade, enquadramento + zoom com ponto de foco, e agora o áudio.</p>
+  <div class="win">
+    <div class="controls">
+      <div class="ctrl">
+        <label>Velocidade do vídeo (0.25× a 2×)</label>
+        <div class="slider"><div class="fill"></div><div class="knob"></div></div>
+        <div class="row" style="justify-content:space-between;color:var(--fg3);font-size:12px"><span>0.25×</span><span>1.0×</span><span>2×</span></div>
+      </div>
+
+      <div class="ctrl hl">
+        <label>🔊 Áudio <span style="color:var(--fg3)">(aparece só se o wallpaper tiver som)</span></label>
+        <div class="slider"><div class="fill g" style="width:40%"></div><div class="knob" style="left:40%"></div></div>
+        <div class="row" style="justify-content:space-between">
+          <span class="row" style="gap:6px">
+            <span class="mute">🔇 Mutar</span>
+          </span>
+          <span style="font-size:12px;color:var(--fg3)">40%</span>
+        </div>
+        <div class="hint">Abaixa/aumenta o volume do vídeo. "Mutar" corta sem perder o valor escolhido.</div>
+      </div>
+
+      <div class="ctrl">
+        <label>Enquadramento</label>
+        <div class="row">
+          <span class="seg on">Preencher (sem distorcer)</span>
+          <span class="seg">Esticar</span>
+          <span class="seg">Caber inteiro</span>
+        </div>
+        <label style="margin-top:12px">Zoom</label>
+        <div class="slider"><div class="fill" style="width:35%"></div><div class="knob" style="left:35%"></div></div>
+      </div>
+
+      <div class="ctrl">
+        <label>Ponto de foco do zoom — arraste o alvo</label>
+        <div class="focus"><div class="target"></div></div>
+        <div class="hint">Só aparece quando o zoom está acima de 1×. O recorte é centrado no alvo.</div>
+      </div>
+    </div>
+  </div>
+
+  <p class="hint" style="margin-top:24px">VivaWall · mockup estático v2 · responda no terminal 🙂</p>
+</div>
+</body>
+</html>

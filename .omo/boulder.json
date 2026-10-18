@@ -1,0 +1,35 @@
+{
+  "schema_version": 2,
+  "active_work_id": "disable-lsp-mcp-deaff6e3",
+  "works": {
+    "disable-lsp-mcp-deaff6e3": {
+      "work_id": "disable-lsp-mcp-deaff6e3",
+      "active_plan": "/home/tarockz/Documentos/Default Project/.omo/plans/disable-lsp-mcp.md",
+      "plan_name": "disable-lsp-mcp",
+      "status": "active",
+      "started_at": "2026-10-17T04:13:30.253Z",
+      "updated_at": "2026-10-17T04:13:30.253Z",
+      "session_ids": [
+        "opencode:ses_eb8887b72ffehdug6w5FKkDLFX"
+      ],
+      "session_origins": {
+        "opencode:ses_eb8887b72ffehdug6w5FKkDLFX": "direct"
+      },
+      "agent": "atlas",
+      "task_sessions": {}
+    }
+  },
+  "active_plan": "/home/tarockz/Documentos/Default Project/.omo/plans/disable-lsp-mcp.md",
+  "started_at": "2026-10-17T04:13:30.253Z",
+  "status": "active",
+  "updated_at": "2026-10-17T04:13:30.253Z",
+  "session_ids": [
+    "opencode:ses_eb8887b72ffehdug6w5FKkDLFX"
+  ],
+  "session_origins": {
+    "opencode:ses_eb8887b72ffehdug6w5FKkDLFX": "direct"
+  },
+  "plan_name": "disable-lsp-mcp",
+  "task_sessions": {},
+  "agent": "atlas"
+}

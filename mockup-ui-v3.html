@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ViewWalls — Ajustes (v3)</title>
+<style>
+  :root{
+    --bg:#1b1e20; --bg2:#232629; --bg3:#2a2e32; --line:#31363b;
+    --fg:#eff0f1; --fg2:#bdc3c7; --fg3:#7f8c8d;
+    --accent:#3daee9; --accent2:#2980b9; --ok:#27ae60;
+    --radius:8px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);
+    font-family:"Noto Sans","Cantarell",system-ui,sans-serif;font-size:14px;line-height:1.4}
+  .wrap{max-width:1100px;margin:0 auto;padding:28px 20px 60px}
+  h1{font-size:24px;margin:0 0 4px}
+  h2{font-size:18px;margin:34px 0 6px;border-bottom:1px solid var(--line);padding-bottom:6px}
+  .sub{color:var(--fg2);margin:0 0 18px}
+  .tag{display:inline-block;font-size:11px;padding:2px 7px;border-radius:20px;background:var(--bg3);color:var(--fg2);border:1px solid var(--line)}
+  .tag.video{color:#f5a623;border-color:#5a4a2a}
+  .tag.sound{color:#27ae60;border-color:#2a5a3a}
+  .new{color:#27ae60;font-weight:600}
+
+  .note{background:#20313a;border-left:3px solid var(--accent);padding:10px 14px;border-radius:4px;color:var(--fg2);font-size:13px;margin:14px 0}
+  .note.g{background:#1e3326;border-left-color:var(--ok)}
+
+  .win{background:var(--bg2);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:0 8px 30px rgba(0,0,0,.4)}
+  .titlebar{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg3);border-bottom:1px solid var(--line)}
+  .dot{width:11px;height:11px;border-radius:50%}
+  .titlebar .name{margin-left:8px;color:var(--fg2);font-size:13px}
+  .titlebar .spacer{flex:1}
+
+  /* settings layout */
+  .settings{display:grid;grid-template-columns:1.15fr 1fr;gap:0}
+  .previewpane{padding:14px;border-right:1px solid var(--line);background:var(--bg2)}
+  .previewlabel{font-size:12px;color:var(--fg2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;display:flex;justify-content:space-between}
+  .monitor-frame{border:6px solid #101214;border-radius:8px;background:#000;position:relative;overflow:hidden;box-shadow:0 6px 20px rgba(0,0,0,.5)}
+  .monitor-stand{width:70px;height:12px;background:#101214;margin:0 auto;border-radius:0 0 6px 6px}
+  .monitor-base{width:150px;height:8px;background:#191c1f;margin:0 auto;border-radius:6px}
+  .scr{height:250px;position:relative;overflow:hidden;
+       background:linear-gradient(135deg,#41295a,#2f0743)}
+  .scr .gridlines{position:absolute;inset:0;background-image:
+       linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),
+       linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px);
+       background-size:40px 40px}
+  /* simulated zoom + focus: an inner layer scaled from a focus point */
+  .scr .zoomed{position:absolute;left:35%;top:40%;width:150%;height:150%;transform:translate(-35%,-40%) scale(1.25);transform-origin:35% 40%;
+       background:radial-gradient(circle at 35% 40%,#7b4bd8 0%,#41295a 45%,#2f0743 100%)}
+  .scr .focusring{position:absolute;left:35%;top:40%;width:26px;height:26px;border:2px solid #fff;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 0 2px rgba(0,0,0,.5),0 0 12px rgba(255,255,255,.4)}
+  .scr .hud{position:absolute;left:8px;bottom:8px;display:flex;gap:6px}
+  .scr .hud span{font-size:11px;background:rgba(0,0,0,.55);padding:2px 8px;border-radius:10px}
+  .scr .hud .s{color:#9be29b}
+  .preview-meta{margin-top:10px;font-size:12px;color:var(--fg3);display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}
+
+  .ctrlpane{padding:14px;background:var(--bg2)}
+  .field{margin-bottom:16px}
+  .field > label{display:block;font-size:12px;color:var(--fg2);margin-bottom:8px}
+  .slider{height:6px;border-radius:3px;background:var(--bg3);position:relative;margin:10px 0}
+  .slider .fill{position:absolute;left:0;top:0;bottom:0;width:60%;background:var(--accent);border-radius:3px}
+  .slider .fill.g{background:var(--ok)}
+  .slider .knob{position:absolute;left:60%;top:50%;width:14px;height:14px;border-radius:50%;background:#fff;transform:translate(-50%,-50%);box-shadow:0 1px 4px rgba(0,0,0,.5)}
+  .scale{display:flex;justify-content:space-between;font-size:11px;color:var(--fg3)}
+  .row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .seg{border:1px solid var(--line);background:var(--bg);color:var(--fg2);padding:7px 12px;border-radius:5px;font-size:12px;cursor:default}
+  .seg.on{background:var(--accent2);color:#fff;border-color:var(--accent2)}
+  .mute{border:1px solid var(--line);background:var(--bg);color:var(--fg2);padding:6px 12px;border-radius:5px;font-size:12px}
+  .mute.on{background:#7a2b2b;color:#fff;border-color:#a33}
+
+  .divider{border:0;border-top:1px solid var(--line);margin:16px 0}
+  .actions{display:flex;gap:8px;justify-content:flex-end;align-items:center;padding-top:4px}
+  .actions .dirty{margin-right:auto;font-size:12px;color:#f5a623}
+  .btn{border:1px solid var(--line);background:var(--bg3);color:var(--fg);padding:8px 18px;border-radius:6px;font-size:13px;cursor:default}
+  .btn.primary{background:var(--accent2);border-color:var(--accent2);color:#fff;font-weight:600}
+  .btn.primary.disabled{opacity:.45}
+  .hint{color:var(--fg3);font-size:12px;margin-top:6px}
+
+  .caption{text-align:center;color:var(--fg3);font-size:12px;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>ViewWalls — tela de Ajustes <span class="tag">v3</span></h1>
+  <p class="sub">Exemplo de como fica com o botão <strong>Aplicar</strong>: você mexe nos valores, a pré-visualização mostra, e só vale na área de trabalho quando você clica em Aplicar.</p>
+
+  <div class="note g">
+    <strong class="new">Comportamento:</strong> enquanto você mexe, aparece o aviso <em>"alterações não aplicadas"</em>. Nada muda no desktop até clicar em <strong>Aplicar</strong>. Se sair sem aplicar, os valores voltam ao que estava.
+  </div>
+
+  <div class="win">
+    <div class="titlebar">
+      <span class="dot" style="background:#e74c3c"></span>
+      <span class="dot" style="background:#f5a623"></span>
+      <span class="dot" style="background:#27ae60"></span>
+      <span class="name">ViewWalls — Ajustes · DP-1 (2560×1440 · 200Hz)</span>
+      <span class="spacer"></span>
+    </div>
+
+    <div class="settings">
+      <!-- PREVIEW -->
+      <div class="previewpane">
+        <div class="previewlabel"><span>Pré-visualização</span><span class="tag video">▶ vídeo</span></div>
+        <div class="monitor-frame">
+          <div class="scr">
+            <div class="zoomed"></div>
+            <div class="gridlines"></div>
+            <div class="focusring"></div>
+            <div class="hud"><span>▶ Purple Rain City</span><span class="s">🔊 40%</span><span>1.25×</span></div>
+          </div>
+        </div>
+        <div class="monitor-stand"></div>
+        <div class="monitor-base"></div>
+        <div class="preview-meta">
+          <span>Fonte: Pixabay</span><span>2560×1440 · 30fps</span><span>tem som</span>
+        </div>
+        <div class="caption">A prévia reflete seus ajustes, mas o desktop só muda ao Aplicar.</div>
+      </div>
+
+      <!-- CONTROLS -->
+      <div class="ctrlpane">
+        <div class="field">
+          <label>Velocidade do vídeo</label>
+          <div class="slider"><div class="fill" style="width:40%"></div><div class="knob" style="left:40%"></div></div>
+          <div class="scale"><span>0.25×</span><span>1.0×</span><span>2×</span></div>
+        </div>
+
+        <div class="field">
+          <label>Enquadramento</label>
+          <div class="row">
+            <span class="seg on">Preencher (sem distorcer)</span>
+            <span class="seg">Esticar</span>
+            <span class="seg">Caber inteiro</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Zoom <span style="color:var(--fg3)">— clique na prévia para definir o ponto de foco</span></label>
+          <div class="slider"><div class="fill" style="width:35%"></div><div class="knob" style="left:35%"></div></div>
+          <div class="scale"><span>1.0×</span><span>1.25×</span><span>2.0×</span></div>
+        </div>
+
+        <hr class="divider">
+
+        <div class="field" style="margin-bottom:8px">
+          <label>🔊 Áudio <span style="color:var(--fg3)">(o wallpaper tem som)</span></label>
+          <div class="slider"><div class="fill g" style="width:40%"></div><div class="knob" style="left:40%"></div></div>
+          <div class="row" style="justify-content:space-between">
+            <span class="mute">🔇 Mutar</span>
+            <span style="font-size:12px;color:var(--fg3)">40%</span>
+          </div>
+        </div>
+
+        <hr class="divider">
+
+        <div class="actions">
+          <span class="dirty">● alterações não aplicadas</span>
+          <span class="btn">Cancelar</span>
+          <span class="btn primary">Aplicar</span>
+        </div>
+        <div class="hint">Aplicar vale só para o monitor <strong>DP-1</strong>. Para o outro monitor, use a lista de monitores.</div>
+      </div>
+    </div>
+  </div>
+
+  <p class="caption" style="margin-top:26px">ViewWalls · mockup estático v3 · responda no terminal 🙂</p>
+</div>
+</body>
+</html>
