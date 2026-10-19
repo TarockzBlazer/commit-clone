@@ -226,3 +226,47 @@ cd /home/tarockz/Documentos/Default\ Project/commet-clone/apps/api && npx jest -
 - **Codecs**: Opus (padrão WebRTC), 48kHz stereo
 - **Race condition handling**: Offer deduplication, ICE candidate buffering, answer validation
 - **Resource cleanup**: Tracks, peer connections, audio elements, buffers, event listeners
+
+---
+
+## Auditoria de Segurança e Preparação para Publicação (2026-10-19)
+
+### Verificações realizadas
+- ✅ Nenhum segredo de produção no código rastreado (`.env` só tem `DATABASE_URL="file:./dev.db"`)
+- ✅ JWT secret usa fallback dev (`'dev-secret-change-in-production'`) — **documentado como requisito de produção**
+- ✅ Senhas hasheadas com bcrypt (cost 10), nunca logadas
+- ✅ Banco local `apps/api/prisma/dev.db` ignorado via `.gitignore`
+- ✅ Nenhuma API key, token ou credencial no histórico ou arquivos rastreados
+- ✅ `.gitignore` criado na raiz, `apps/api/`, `apps/web/` cobrindo: `node_modules/`, `dist/`, `.next/`, `.env*`, `*.log`, `prisma/dev.db`, `coverage/`, IDE files, OS files
+
+### Estado do Git
+- Branch: `master` (4 commits: initial, voice, infinite-loop fix, Socket.IO fix)
+- Remotes: **nenhum configurado** (pronto para `git remote add origin`)
+- Working tree: limpo exceto `dist/`, `node_modules/`, `package-lock.json` (ignored)
+- Arquivos não rastreados esperados: `apps/api/prisma/`, `apps/api/src/auth/`, etc. (código fonte novo)
+
+### Pendências para publicação segura
+1. **Verificar histórico de commits** — nenhum segredo detectado nos 4 commits, mas revisão manual recomendada antes de `git push`
+2. **Remover `dist/`, `node_modules/`, `package-lock.json` do tracking** — atualmente modificados mas não staged; devem ser removidos do índice se já comitados anteriormente
+3. **Configurar remote** — `git remote add origin <github-url>`
+3. **Definir branch default** — atualmente `master` (padrão)
+
+### Comandos para publicação futura (manual)
+```bash
+# 1. Verificar status limpo
+git status
+
+# 2. Remover artifacts se rastreados acidentalmente
+git rm -r --cached apps/api/dist apps/api/node_modules apps/web/node_modules apps/api/package-lock.json apps/web/package-lock.json 2>/dev/null || true
+
+# 3. Commit final dos .gitignore
+git add .gitignore apps/api/.gitignore apps/web/.gitignore
+git commit -m "chore: add .gitignore files for public repo"
+
+# 4. Adicionar remote e push
+git remote add origin https://github.com/<user>/commet-clone.git
+git push -u origin master
+```
+
+### Estado Final do Projeto
+**Desenvolvimento: PAUSADO** — Pronto para publicação como portfolio experimental. Documentação completa em `README.md` e `PROGRESS.md`.

@@ -1,3 +1,7 @@
+// Set required environment variables for tests
+process.env.JWT_SECRET = 'test-secret-key-for-testing-only';
+process.env.DATABASE_URL = 'file:./dev.db';
+
 module.exports = {
   moduleFileExtensions: ['js', 'json', 'ts'],
   rootDir: 'src',
