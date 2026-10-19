@@ -49,7 +49,7 @@ Criar clone do Commet.chat com UI Discord, backend próprio, auto-hospedável, v
 - `apps/api/prisma/migrations/20261018173159_init/migration.sql`
 - `apps/web/src/lib/api.ts` (cliente API tipado)
 - `apps/web/src/context/AuthContext.tsx` (estado de autenticação)
-- `apps/web/src/context/WebSocketContext.tsx` (conexão WebSocket + voice events, stale closure fix)
+- `apps/web/src/context/WebSocketContext.tsx` (conexão Socket.IO + voice events, stale closure fix, loop infinito fix)
 - `apps/web/src/components/LoginPage.tsx` (tela de login)
 - `apps/web/src/components/RegisterPage.tsx` (tela de registro)
 - `apps/web/src/components/AppLayout.tsx` (layout principal estilo Discord)
@@ -57,6 +57,7 @@ Criar clone do Commet.chat com UI Discord, backend próprio, auto-hospedável, v
 - `apps/web/src/app/page.tsx` (página principal com providers)
 - `apps/web/tsconfig.json` (path aliases @/*)
 - `apps/web/next.config.mjs` (configuração Next.js)
+- `apps/web/package.json` (dependência `socket.io-client` adicionada)
 
 ## Testes executados e resultados
 - [PASS] `POST /auth/register` - retorna user + token JWT
@@ -86,6 +87,7 @@ Criar clone do Commet.chat com UI Discord, backend próprio, auto-hospedável, v
 - [PASS] **Voice answer**: forward to target, error if sender not in channel
 - [PASS] **Voice ICE candidate**: forward to target, silent drop if sender/target not in channel
 - [PASS] **Voice disconnect cleanup**: removes participant, notifies others, deletes empty channel
+- [PASS] **Socket.IO handshake**: `GET /ws-chat/?EIO=4&transport=polling&token=...` → 200 OK com `sid` e `upgrades:["websocket"]`
 - [PASS] Testes unitários: AuthService, ServersService, ChannelsService, MessagesService, WsGateway ✅
 - [PASS] Testes e2e: Auth, Servers, Channels, Messages ✅
 - [PASS] Frontend build TypeScript/Next.js ✅
@@ -170,6 +172,7 @@ cd apps/web && npm run dev
 - **Track management**: `replaceTrack` para senders existentes, `addTrack` para novos, `track.stop()` no cleanup
 - **Deafen implementation**: `audioEl.muted` no elemento de áudio remoto (não afeta captura)
 - **Loop infinito WebSocketContext** (`Maximum update depth exceeded`): removida dependência circular `socket` → `cleanup` → `connect` → `useEffect` usando refs (`socketRef`, `isConnectingRef`, `tokenRef`) e `cleanup` sem dependências; guard `isConnectingRef` previne conexões simultâneas; reconexão só ocorre se `wasConnected=true`
+- **Incompatibilidade de protocolo WebSocket/Socket.IO**: frontend usava `new WebSocket()` nativo enquanto backend usava Socket.IO; corrigido trocando para `socket.io-client` no frontend e ajustando `path: '/ws-chat'` no gateway; handshake Socket.IO (EIO=4) agora retorna 200 OK com `sid` e `upgrades:["websocket"]`
 
 ## Bloqueios externos
 - PostgreSQL não disponível localmente (docker indisponível) → usando SQLite para dev

@@ -31,7 +31,7 @@ interface VoiceParticipant {
   username: string;
 }
 
-@WebSocketGateway({ cors: true, namespace: '/ws-chat' })
+@WebSocketGateway({ cors: true, namespace: '/ws-chat', path: '/ws-chat' })
 export class WsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server!: Server;

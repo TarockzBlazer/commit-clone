@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, useRef, ReactNode, useCallback } from 'react';
+import { io, Socket } from 'socket.io-client';
 import { Message } from '@/lib/api';
 
 interface VoiceParticipant {
@@ -9,7 +10,7 @@ interface VoiceParticipant {
 }
 
 interface WebSocketContextType {
-  socket: WebSocket | null;
+  socket: Socket | null;
   connect: (token: string) => void;
   disconnect: () => void;
   joinChannel: (channelId: string) => void;
@@ -34,10 +35,10 @@ interface WebSocketContextType {
 
 const WebSocketContext = createContext<WebSocketContextType | undefined>(undefined);
 
-const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:4000/ws-chat';
+const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:4000';
 
 export function WebSocketProvider({ children }: { children: ReactNode }) {
-  const [socket, setSocket] = useState<WebSocket | null>(null);
+  const [socket, setSocket] = useState<Socket | null>(null);
   const [connected, setConnected] = useState(false);
   const [inVoiceChannel, setInVoiceChannel] = useState<string | null>(null);
   const messageCallbacks = useRef<Set<(message: Message) => void>>(new Set());
@@ -51,7 +52,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
   const voiceIceCandidateCallbacks = useRef<Set<(data: { fromUserId: string; fromUsername: string; candidate: RTCIceCandidateInit }) => void>>(new Set());
   const reconnectTimeout = useRef<NodeJS.Timeout | null>(null);
   const inVoiceChannelRef = useRef<string | null>(null);
-  const socketRef = useRef<WebSocket | null>(null);
+  const socketRef = useRef<Socket | null>(null);
   const isConnectingRef = useRef(false);
   const tokenRef = useRef<string | null>(null);
 
@@ -65,10 +66,19 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     }
     const currentSocket = socketRef.current;
     if (currentSocket) {
-      currentSocket.onclose = null;
-      currentSocket.onerror = null;
-      currentSocket.onmessage = null;
-      currentSocket.close();
+      currentSocket.off('connect');
+      currentSocket.off('disconnect');
+      currentSocket.off('connect_error');
+      currentSocket.off('new_message');
+      currentSocket.off('joined');
+      currentSocket.off('voice_joined');
+      currentSocket.off('voice_left');
+      currentSocket.off('voice_user_joined');
+      currentSocket.off('voice_user_left');
+      currentSocket.off('voice_offer');
+      currentSocket.off('voice_answer');
+      currentSocket.off('voice_ice_candidate');
+      currentSocket.disconnect();
     }
     socketRef.current = null;
     setSocket(null);
@@ -83,7 +93,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
       console.log('[WS] Connection already in progress, skipping');
       return;
     }
-    if (socketRef.current?.readyState === WebSocket.OPEN) {
+    if (socketRef.current?.connected) {
       console.log('[WS] Already connected, skipping');
       return;
     }
@@ -92,17 +102,21 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     tokenRef.current = token;
     cleanup();
 
-    const ws = new WebSocket(`${WS_URL}?token=${encodeURIComponent(token)}`);
+    const ws = io(`${WS_URL}/ws-chat`, {
+      auth: { token },
+      transports: ['websocket', 'polling'],
+      reconnection: false, // We handle reconnection manually
+    });
 
-    ws.onopen = () => {
+    ws.on('connect', () => {
       isConnectingRef.current = false;
       socketRef.current = ws;
       setSocket(ws);
       setConnected(true);
       console.log('[WS] Connected');
-    };
+    });
 
-    ws.onclose = () => {
+    ws.on('disconnect', (reason) => {
       isConnectingRef.current = false;
       const wasConnected = connected;
       setConnected(false);
@@ -110,9 +124,9 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
       inVoiceChannelRef.current = null;
       socketRef.current = null;
       setSocket(null);
-      console.log('[WS] Disconnected, was connected:', wasConnected);
+      console.log('[WS] Disconnected, reason:', reason, 'was connected:', wasConnected);
 
-      if (wasConnected) {
+      if (wasConnected && reason !== 'io client disconnect') {
         reconnectTimeout.current = setTimeout(() => {
           const storedToken = tokenRef.current || localStorage.getItem('token');
           if (storedToken && !isConnectingRef.current) {
@@ -120,79 +134,89 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
           }
         }, 3000);
       }
-    };
+    });
 
-    ws.onerror = (error) => {
-      console.error('[WS] Error:', error);
-    };
+    ws.on('connect_error', (error) => {
+      isConnectingRef.current = false;
+      console.error('[WS] Connection error:', error.message);
+    });
 
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.event === 'new_message' && data.data) {
-          messageCallbacks.current.forEach(cb => cb(data.data));
-        } else if (data.event === 'joined' && data.data) {
-          joinedCallbacks.current.forEach(cb => cb(data.data.channelId));
-        } else if (data.event === 'voice_joined' && data.data) {
-          setInVoiceChannel(data.data.channelId);
-          inVoiceChannelRef.current = data.data.channelId;
-          voiceJoinedCallbacks.current.forEach(cb => cb(data.data));
-        } else if (data.event === 'voice_left' && data.data) {
-          const currentChannel = inVoiceChannelRef.current;
-          if (currentChannel === data.data.channelId) {
-            setInVoiceChannel(null);
-            inVoiceChannelRef.current = null;
-          }
-          voiceLeftCallbacks.current.forEach(cb => cb(data.data));
-        } else if (data.event === 'voice_user_joined' && data.data) {
-          voiceUserJoinedCallbacks.current.forEach(cb => cb(data.data));
-        } else if (data.event === 'voice_user_left' && data.data) {
-          voiceUserLeftCallbacks.current.forEach(cb => cb(data.data));
-        } else if (data.event === 'voice_offer' && data.data) {
-          voiceOfferCallbacks.current.forEach(cb => cb(data.data));
-        } else if (data.event === 'voice_answer' && data.data) {
-          voiceAnswerCallbacks.current.forEach(cb => cb(data.data));
-        } else if (data.event === 'voice_ice_candidate' && data.data) {
-          voiceIceCandidateCallbacks.current.forEach(cb => cb(data.data));
-        }
-      } catch (e) {
-        console.error('[WS] Parse error:', e);
+    ws.on('new_message', (data: Message) => {
+      messageCallbacks.current.forEach(cb => cb(data));
+    });
+
+    ws.on('joined', (data: { channelId: string }) => {
+      joinedCallbacks.current.forEach(cb => cb(data.channelId));
+    });
+
+    ws.on('voice_joined', (data: { channelId: string; participants: VoiceParticipant[] }) => {
+      setInVoiceChannel(data.channelId);
+      inVoiceChannelRef.current = data.channelId;
+      voiceJoinedCallbacks.current.forEach(cb => cb(data));
+    });
+
+    ws.on('voice_left', (data: { channelId: string }) => {
+      const currentChannel = inVoiceChannelRef.current;
+      if (currentChannel === data.channelId) {
+        setInVoiceChannel(null);
+        inVoiceChannelRef.current = null;
       }
-    };
+      voiceLeftCallbacks.current.forEach(cb => cb(data));
+    });
+
+    ws.on('voice_user_joined', (data: { userId: string; username: string }) => {
+      voiceUserJoinedCallbacks.current.forEach(cb => cb(data));
+    });
+
+    ws.on('voice_user_left', (data: { userId: string; username: string }) => {
+      voiceUserLeftCallbacks.current.forEach(cb => cb(data));
+    });
+
+    ws.on('voice_offer', (data: { fromUserId: string; fromUsername: string; offer: RTCSessionDescriptionInit }) => {
+      voiceOfferCallbacks.current.forEach(cb => cb(data));
+    });
+
+    ws.on('voice_answer', (data: { fromUserId: string; fromUsername: string; answer: RTCSessionDescriptionInit }) => {
+      voiceAnswerCallbacks.current.forEach(cb => cb(data));
+    });
+
+    ws.on('voice_ice_candidate', (data: { fromUserId: string; fromUsername: string; candidate: RTCIceCandidateInit }) => {
+      voiceIceCandidateCallbacks.current.forEach(cb => cb(data));
+    });
 
     setSocket(ws);
-  }, [cleanup]);
+  }, [cleanup, connected]);
 
   const disconnect = useCallback(() => {
     cleanup();
   }, [cleanup]);
 
   const joinChannel = useCallback((channelId: string) => {
-    socketRef.current?.send(JSON.stringify({ event: 'join_channel', data: channelId }));
+    socketRef.current?.emit('join_channel', channelId);
   }, []);
 
   const sendMessage = useCallback((channelId: string, content: string) => {
-    socketRef.current?.send(JSON.stringify({ event: 'send_message', data: { channelId, content } }));
+    socketRef.current?.emit('send_message', { channelId, content });
   }, []);
 
   const joinVoice = useCallback((channelId: string) => {
-    socketRef.current?.send(JSON.stringify({ event: 'join_voice', data: channelId }));
+    socketRef.current?.emit('join_voice', channelId);
   }, []);
 
   const leaveVoice = useCallback((channelId: string) => {
-    socketRef.current?.send(JSON.stringify({ event: 'leave_voice', data: channelId }));
+    socketRef.current?.emit('leave_voice', channelId);
   }, []);
 
   const sendVoiceOffer = useCallback((channelId: string, targetUserId: string, offer: RTCSessionDescriptionInit) => {
-    socketRef.current?.send(JSON.stringify({ event: 'voice_offer', data: { channelId, targetUserId, offer } }));
+    socketRef.current?.emit('voice_offer', { channelId, targetUserId, offer });
   }, []);
 
   const sendVoiceAnswer = useCallback((channelId: string, targetUserId: string, answer: RTCSessionDescriptionInit) => {
-    socketRef.current?.send(JSON.stringify({ event: 'voice_answer', data: { channelId, targetUserId, answer } }));
+    socketRef.current?.emit('voice_answer', { channelId, targetUserId, answer });
   }, []);
 
   const sendVoiceIceCandidate = useCallback((channelId: string, targetUserId: string, candidate: RTCIceCandidateInit) => {
-    socketRef.current?.send(JSON.stringify({ event: 'voice_ice_candidate', data: { channelId, targetUserId, candidate } }));
+    socketRef.current?.emit('voice_ice_candidate', { channelId, targetUserId, candidate });
   }, []);
 
   const onMessage = useCallback((callback: (message: Message) => void) => {
