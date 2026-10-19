@@ -51,51 +51,81 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
   const voiceIceCandidateCallbacks = useRef<Set<(data: { fromUserId: string; fromUsername: string; candidate: RTCIceCandidateInit }) => void>>(new Set());
   const reconnectTimeout = useRef<NodeJS.Timeout | null>(null);
   const inVoiceChannelRef = useRef<string | null>(null);
+  const socketRef = useRef<WebSocket | null>(null);
+  const isConnectingRef = useRef(false);
+  const tokenRef = useRef<string | null>(null);
 
   inVoiceChannelRef.current = inVoiceChannel;
+  socketRef.current = socket;
 
   const cleanup = useCallback(() => {
     if (reconnectTimeout.current) {
       clearTimeout(reconnectTimeout.current);
       reconnectTimeout.current = null;
     }
-    if (socket) {
-      socket.onclose = null;
-      socket.onerror = null;
-      socket.onmessage = null;
-      socket.close();
+    const currentSocket = socketRef.current;
+    if (currentSocket) {
+      currentSocket.onclose = null;
+      currentSocket.onerror = null;
+      currentSocket.onmessage = null;
+      currentSocket.close();
     }
+    socketRef.current = null;
     setSocket(null);
     setConnected(false);
     setInVoiceChannel(null);
     inVoiceChannelRef.current = null;
-  }, [socket]);
+    isConnectingRef.current = false;
+  }, []);
 
   const connect = useCallback((token: string) => {
+    if (isConnectingRef.current) {
+      console.log('[WS] Connection already in progress, skipping');
+      return;
+    }
+    if (socketRef.current?.readyState === WebSocket.OPEN) {
+      console.log('[WS] Already connected, skipping');
+      return;
+    }
+
+    isConnectingRef.current = true;
+    tokenRef.current = token;
     cleanup();
-    
+
     const ws = new WebSocket(`${WS_URL}?token=${encodeURIComponent(token)}`);
-    
+
     ws.onopen = () => {
+      isConnectingRef.current = false;
+      socketRef.current = ws;
+      setSocket(ws);
       setConnected(true);
       console.log('[WS] Connected');
     };
-    
+
     ws.onclose = () => {
+      isConnectingRef.current = false;
+      const wasConnected = connected;
       setConnected(false);
       setInVoiceChannel(null);
       inVoiceChannelRef.current = null;
-      console.log('[WS] Disconnected');
-      reconnectTimeout.current = setTimeout(() => {
-        const storedToken = localStorage.getItem('token');
-        if (storedToken) connect(storedToken);
-      }, 3000);
+      socketRef.current = null;
+      setSocket(null);
+      console.log('[WS] Disconnected, was connected:', wasConnected);
+
+      if (wasConnected) {
+        reconnectTimeout.current = setTimeout(() => {
+          const storedToken = tokenRef.current || localStorage.getItem('token');
+          if (storedToken && !isConnectingRef.current) {
+            connect(storedToken);
+          }
+        }, 3000);
+      }
     };
-    
+
     ws.onerror = (error) => {
       console.error('[WS] Error:', error);
     };
-    
+
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
@@ -129,7 +159,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
         console.error('[WS] Parse error:', e);
       }
     };
-    
+
     setSocket(ws);
   }, [cleanup]);
 
@@ -138,32 +168,32 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
   }, [cleanup]);
 
   const joinChannel = useCallback((channelId: string) => {
-    socket?.send(JSON.stringify({ event: 'join_channel', data: channelId }));
-  }, [socket]);
+    socketRef.current?.send(JSON.stringify({ event: 'join_channel', data: channelId }));
+  }, []);
 
   const sendMessage = useCallback((channelId: string, content: string) => {
-    socket?.send(JSON.stringify({ event: 'send_message', data: { channelId, content } }));
-  }, [socket]);
+    socketRef.current?.send(JSON.stringify({ event: 'send_message', data: { channelId, content } }));
+  }, []);
 
   const joinVoice = useCallback((channelId: string) => {
-    socket?.send(JSON.stringify({ event: 'join_voice', data: channelId }));
-  }, [socket]);
+    socketRef.current?.send(JSON.stringify({ event: 'join_voice', data: channelId }));
+  }, []);
 
   const leaveVoice = useCallback((channelId: string) => {
-    socket?.send(JSON.stringify({ event: 'leave_voice', data: channelId }));
-  }, [socket]);
+    socketRef.current?.send(JSON.stringify({ event: 'leave_voice', data: channelId }));
+  }, []);
 
   const sendVoiceOffer = useCallback((channelId: string, targetUserId: string, offer: RTCSessionDescriptionInit) => {
-    socket?.send(JSON.stringify({ event: 'voice_offer', data: { channelId, targetUserId, offer } }));
-  }, [socket]);
+    socketRef.current?.send(JSON.stringify({ event: 'voice_offer', data: { channelId, targetUserId, offer } }));
+  }, []);
 
   const sendVoiceAnswer = useCallback((channelId: string, targetUserId: string, answer: RTCSessionDescriptionInit) => {
-    socket?.send(JSON.stringify({ event: 'voice_answer', data: { channelId, targetUserId, answer } }));
-  }, [socket]);
+    socketRef.current?.send(JSON.stringify({ event: 'voice_answer', data: { channelId, targetUserId, answer } }));
+  }, []);
 
   const sendVoiceIceCandidate = useCallback((channelId: string, targetUserId: string, candidate: RTCIceCandidateInit) => {
-    socket?.send(JSON.stringify({ event: 'voice_ice_candidate', data: { channelId, targetUserId, candidate } }));
-  }, [socket]);
+    socketRef.current?.send(JSON.stringify({ event: 'voice_ice_candidate', data: { channelId, targetUserId, candidate } }));
+  }, []);
 
   const onMessage = useCallback((callback: (message: Message) => void) => {
     messageCallbacks.current.add(callback);

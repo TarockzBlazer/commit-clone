@@ -169,6 +169,7 @@ cd apps/web && npm run dev
 - **Stale closure WebSocketContext**: `inVoiceChannelRef` para acesso ao valor atual no handler `onmessage`
 - **Track management**: `replaceTrack` para senders existentes, `addTrack` para novos, `track.stop()` no cleanup
 - **Deafen implementation**: `audioEl.muted` no elemento de áudio remoto (não afeta captura)
+- **Loop infinito WebSocketContext** (`Maximum update depth exceeded`): removida dependência circular `socket` → `cleanup` → `connect` → `useEffect` usando refs (`socketRef`, `isConnectingRef`, `tokenRef`) e `cleanup` sem dependências; guard `isConnectingRef` previne conexões simultâneas; reconexão só ocorre se `wasConnected=true`
 
 ## Bloqueios externos
 - PostgreSQL não disponível localmente (docker indisponível) → usando SQLite para dev
