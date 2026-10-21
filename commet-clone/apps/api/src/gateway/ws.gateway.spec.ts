@@ -56,6 +56,9 @@ describe('WsGateway', () => {
       emit: jest.fn(),
       disconnect: jest.fn(),
       on: jest.fn(),
+      broadcast: {
+        to: jest.fn().mockReturnValue({ emit: jest.fn() }),
+      },
     } as any;
 
     const mockPrisma = {
@@ -236,24 +239,37 @@ describe('WsGateway', () => {
       };
       prisma.message.create.mockResolvedValue(mockMessage);
 
-      await gateway.handleMessage(mockSocket as any, { channelId: 'channel-1', content: 'Hello' });
+      await gateway.handleMessage(mockSocket as any, {
+        id: 'msg-1',
+        content: 'Hello',
+        userId: 'user-1',
+        channelId: 'channel-1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        user: { id: 'user-1', username: 'testuser' },
+      } as any);
 
-      expect(prisma.message.create).toHaveBeenCalledWith({
-        data: {
-          content: 'Hello',
-          channelId: 'channel-1',
-          userId: 'user-1',
-        },
-        include: { user: { select: { id: true, username: true } } },
-      });
-      expect(mockServer.to).toHaveBeenCalledWith('channel:channel-1');
-      expect(mockServer.to().emit).toHaveBeenCalledWith('new_message', mockMessage);
+      expect(prisma.message.create).not.toHaveBeenCalled();
+      expect(mockSocket.broadcast.to).toHaveBeenCalledWith('channel:channel-1');
+      expect(mockSocket.broadcast.to().emit).toHaveBeenCalledWith('new_message', expect.objectContaining({
+        content: 'Hello',
+        channelId: 'channel-1',
+        userId: 'user-1',
+      }));
     });
 
     it('should not send if user not authenticated', async () => {
       mockSocket.data = {};
 
-      await gateway.handleMessage(mockSocket as any, { channelId: 'channel-1', content: 'Hello' });
+      await gateway.handleMessage(mockSocket as any, {
+        id: 'msg-1',
+        content: 'Hello',
+        userId: 'user-1',
+        channelId: 'channel-1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        user: { id: 'user-1', username: 'testuser' },
+      } as any);
 
       expect(prisma.message.create).not.toHaveBeenCalled();
     });
@@ -262,7 +278,15 @@ describe('WsGateway', () => {
       mockSocket.data = { user: { sub: 'user-1' } };
       prisma.channel.findUnique.mockResolvedValue(null);
 
-      await gateway.handleMessage(mockSocket as any, { channelId: 'channel-1', content: 'Hello' });
+      await gateway.handleMessage(mockSocket as any, {
+        id: 'msg-1',
+        content: 'Hello',
+        userId: 'user-1',
+        channelId: 'channel-1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        user: { id: 'user-1', username: 'testuser' },
+      } as any);
 
       expect(prisma.message.create).not.toHaveBeenCalled();
     });
@@ -274,7 +298,15 @@ describe('WsGateway', () => {
         server: { members: [{ userId: 'user-1' }] },
       });
 
-      await gateway.handleMessage(mockSocket as any, { channelId: 'channel-1', content: 'Hello' });
+      await gateway.handleMessage(mockSocket as any, {
+        id: 'msg-1',
+        content: 'Hello',
+        userId: 'user-1',
+        channelId: 'channel-1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        user: { id: 'user-1', username: 'testuser' },
+      } as any);
 
       expect(prisma.message.create).not.toHaveBeenCalled();
     });

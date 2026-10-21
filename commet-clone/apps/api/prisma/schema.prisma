@@ -23,6 +23,7 @@ model User {
   ownedServers Server[] @relation("ServerOwner")
   channels  ChannelMember[]
   messages  Message[]
+  createdInvites Invite[] @relation("InviteCreator")
 }
 
 model Server {
@@ -35,6 +36,7 @@ model Server {
   
   members   ServerMember[]
   channels  Channel[]
+  invites   Invite[]
 }
 
 model ServerMember {
@@ -73,6 +75,20 @@ model ChannelMember {
   channel   Channel  @relation(fields: [channelId], references: [id])
   
   @@unique([userId, channelId])
+}
+
+model Invite {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  serverId  String
+  server    Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  creatorId String
+  creator   User     @relation("InviteCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  maxUses   Int      @default(100)
+  currentUses Int    @default(0)
+  expiresAt DateTime?
+  createdAt DateTime @default(now())
+  usedAt    DateTime?
 }
 
 model Message {

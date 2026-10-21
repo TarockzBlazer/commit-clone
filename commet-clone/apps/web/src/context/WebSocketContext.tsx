@@ -15,6 +15,7 @@ interface WebSocketContextType {
   disconnect: () => void;
   joinChannel: (channelId: string) => void;
   sendMessage: (channelId: string, content: string) => void;
+  broadcastNewMessage: (message: Message) => void;
   onMessage: (callback: (message: Message) => void) => () => void;
   onJoined: (callback: (channelId: string) => void) => () => void;
   joinVoice: (channelId: string) => void;
@@ -55,6 +56,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
   const socketRef = useRef<Socket | null>(null);
   const isConnectingRef = useRef(false);
   const tokenRef = useRef<string | null>(null);
+  const pendingChannelJoinRef = useRef<string | null>(null);
 
   inVoiceChannelRef.current = inVoiceChannel;
   socketRef.current = socket;
@@ -102,7 +104,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     tokenRef.current = token;
     cleanup();
 
-    const ws = io(`${WS_URL}/ws-chat`, {
+    const ws = io(WS_URL, {
       auth: { token },
       transports: ['websocket', 'polling'],
       reconnection: false, // We handle reconnection manually
@@ -114,6 +116,12 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
       setSocket(ws);
       setConnected(true);
       console.log('[WS] Connected');
+
+      // Execute any pending channel join
+      if (pendingChannelJoinRef.current) {
+        ws.emit('join_channel', pendingChannelJoinRef.current);
+        pendingChannelJoinRef.current = null;
+      }
     });
 
     ws.on('disconnect', (reason) => {
@@ -124,6 +132,8 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
       inVoiceChannelRef.current = null;
       socketRef.current = null;
       setSocket(null);
+      // Clear any pending channel join on disconnect
+      pendingChannelJoinRef.current = null;
       console.log('[WS] Disconnected, reason:', reason, 'was connected:', wasConnected);
 
       if (wasConnected && reason !== 'io client disconnect') {
@@ -192,11 +202,23 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
   }, [cleanup]);
 
   const joinChannel = useCallback((channelId: string) => {
-    socketRef.current?.emit('join_channel', channelId);
+    console.log('[WS] joinChannel called for:', channelId, 'connected:', socketRef.current?.connected);
+    if (socketRef.current?.connected) {
+      socketRef.current.emit('join_channel', channelId);
+    } else {
+      // Queue the channel join for when the connection is established
+      pendingChannelJoinRef.current = channelId;
+    }
   }, []);
 
   const sendMessage = useCallback((channelId: string, content: string) => {
     socketRef.current?.emit('send_message', { channelId, content });
+  }, []);
+
+  // Emite new_message com a mensagem completa (do retorno da REST) para broadcast
+  // aos outros clientes. O remetente já adicionou a mensagem localmente via REST.
+  const broadcastNewMessage = useCallback((message: Message) => {
+    socketRef.current?.emit('new_message', message);
   }, []);
 
   const joinVoice = useCallback((channelId: string) => {
@@ -272,6 +294,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
         disconnect,
         joinChannel,
         sendMessage,
+        broadcastNewMessage,
         onMessage,
         onJoined,
         joinVoice,

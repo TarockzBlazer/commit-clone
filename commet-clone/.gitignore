@@ -39,10 +39,18 @@ Thumbs.db
 # Prisma
 prisma/dev.db
 prisma/dev.db-journal
+apps/api/dev.db
 
 # Debug
 *.log
 /tmp/ws-debug.log
+
+# Playwright
+apps/web/playwright-report/
+apps/web/test-results/
+
+# TypeScript build cache
+apps/web/tsconfig.tsbuildinfo
 
 # Misc
 *.pem

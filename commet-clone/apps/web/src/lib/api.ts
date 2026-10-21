@@ -58,6 +58,22 @@ export const api = {
       request<void>(`/servers/${id}/join`, { method: 'POST' }),
     leave: (id: string) =>
       request<void>(`/servers/${id}/leave`, { method: 'POST' }),
+    createInvite: (id: string, maxUses?: number, expiresInMinutes?: number) =>
+      request<Invite>(`/servers/${id}/invites`, {
+        method: 'POST',
+        body: JSON.stringify({ maxUses, expiresInMinutes }),
+      }),
+    listInvites: (id: string) => request<Invite[]>(`/servers/${id}/invites`),
+    deleteInvite: (serverId: string, inviteId: string) =>
+      request<void>(`/servers/${serverId}/invites/${inviteId}`, { method: 'DELETE' }),
+  },
+  invites: {
+    accept: (code: string) =>
+      request<Server>(`/invites/accept`, {
+        method: 'POST',
+        body: JSON.stringify({ code }),
+      }),
+    getInfo: (code: string) => request<InviteInfo>(`/invites/${code}`),
   },
   channels: {
     list: (serverId: string) => request<Channel[]>(`/servers/${serverId}/channels`),
@@ -133,4 +149,29 @@ export interface Message {
   createdAt: string;
   updatedAt: string;
   user: { id: string; username: string };
+}
+
+export interface Invite {
+  id: string;
+  code: string;
+  serverId: string;
+  server: { id: string; name: string; ownerId: string };
+  creatorId: string;
+  creator: { id: string; username: string };
+  maxUses: number;
+  currentUses: number;
+  expiresAt: string | null;
+  createdAt: string;
+  usedAt: string | null;
+}
+
+export interface InviteInfo {
+  code: string;
+  serverName: string;
+  serverId: string;
+  creatorName: string;
+  maxUses: number;
+  currentUses: number;
+  expiresAt: string | null;
+  createdAt: string;
 }

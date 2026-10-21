@@ -28,32 +28,42 @@ export function LoginPage() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {error && <div className="text-red-400 text-sm">{error}</div>}
+    <form onSubmit={handleSubmit} className="space-y-5">
+      {error && (
+        <div className="text-[var(--danger)] text-sm p-3 bg-[var(--danger)]/10 border border-[var(--danger)]/20 rounded-lg" role="alert">
+          {error}
+        </div>
+      )}
       <div>
-        <label className="block text-sm font-medium mb-1">Usuário</label>
+        <label htmlFor="login-username" className="block text-sm font-medium mb-1">Usuário</label>
         <input
+          id="login-username"
+          data-testid="login-username"
           type="text"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          className="w-full px-4 py-2 bg-[#1a1a1a] border border-[#404040] rounded focus:outline-none focus:border-[#7289da]"
+          className="w-full px-4 py-3 bg-[var(--bg)] border border-[var(--border-strong)] rounded-lg focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] text-white placeholder:text-[var(--muted)]"
           required
+          autoComplete="username"
         />
       </div>
       <div>
-        <label className="block text-sm font-medium mb-1">Senha</label>
+        <label htmlFor="login-password" className="block text-sm font-medium mb-1">Senha</label>
         <input
+          id="login-password"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full px-4 py-2 bg-[#1a1a1a] border border-[#404040] rounded focus:outline-none focus:border-[#7289da]"
+          className="w-full px-4 py-3 bg-[var(--bg)] border border-[var(--border-strong)] rounded-lg focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] text-white placeholder:text-[var(--muted)]"
           required
+          autoComplete="current-password"
         />
       </div>
       <button
         type="submit"
         disabled={loading}
-        className="w-full py-2 bg-[#7289da] text-white rounded hover:bg-[#5b6eae] disabled:opacity-50"
+        data-testid="login-submit"
+        className="w-full py-3 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
       >
         {loading ? 'Entrando...' : 'Entrar'}
       </button>

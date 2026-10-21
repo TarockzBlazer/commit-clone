@@ -10,11 +10,12 @@ interface AuthContextType {
   register: (username: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
+  onAuthSuccess: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({ children, onAuthSuccess }: { children: ReactNode; onAuthSuccess?: () => void }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -40,6 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('token', token);
     setToken(token);
     setUser(user);
+    onAuthSuccess?.();
   };
 
   const register = async (username: string, email: string, password: string) => {
@@ -47,6 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('token', token);
     setToken(token);
     setUser(user);
+    onAuthSuccess?.();
   };
 
   const logout = () => {
@@ -56,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, register, logout, loading }}>
+    <AuthContext.Provider value={{ user, token, login, register, logout, loading, onAuthSuccess: onAuthSuccess || (() => {}) }}>
       {children}
     </AuthContext.Provider>
   );

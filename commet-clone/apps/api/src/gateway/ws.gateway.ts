@@ -10,6 +10,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
+import { Message } from '@prisma/client';
 import * as fs from 'fs';
 const debugLog = (msg: string) => fs.appendFileSync('/tmp/ws-debug.log', `${new Date().toISOString()} ${msg}\n`);
 
@@ -31,7 +32,7 @@ interface VoiceParticipant {
   username: string;
 }
 
-@WebSocketGateway({ cors: true, namespace: '/ws-chat', path: '/ws-chat' })
+@WebSocketGateway({ cors: true })
 export class WsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server!: Server;
@@ -139,16 +140,37 @@ export class WsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const isMember = channel.server.members.some(m => m.userId === client.data.user.sub);
     if (!isMember) return;
 
-    const message = await this.prisma.message.create({
-      data: {
-        content: data.content,
-        channelId: data.channelId,
-        userId: client.data.user.sub,
-      },
-      include: { user: { select: { id: true, username: true } } },
+    // Broadcast para os OUTROS clientes (não para o remetente).
+    // A persistência é feita exclusivamente via REST API pelo cliente remetente,
+    // evitando gravações duplicadas (Socket.IO + REST).
+    client.broadcast.to(`channel:${data.channelId}`).emit('new_message', {
+      content: data.content,
+      channelId: data.channelId,
+      userId: client.data.user.sub,
+      username: client.data.username,
     });
+  }
 
-    this.server.to(`channel:${data.channelId}`).emit('new_message', message);
+  @SubscribeMessage('new_message')
+  async handleNewMessage(client: Socket, data: any) {
+    if (!client.data.user) return;
+    // Impersonation guard: the client may not forge another user's id.
+    // The userId in the payload must match the authenticated socket user.
+    if (data.userId !== client.data.user.sub) {
+      client.emit('error', { message: 'Invalid user id' });
+      return;
+    }
+    // Recebe a mensagem completa já persistida via REST pelo remetente e
+    // faz broadcast apenas para os outros clientes na sala do canal.
+    const channel = await this.prisma.channel.findUnique({
+      where: { id: data.channelId },
+      include: { server: { include: { members: true } } },
+    });
+    if (!channel) return;
+    const isMember = channel.server.members.some(m => m.userId === client.data.user.sub);
+    if (!isMember) return;
+
+    client.broadcast.to(`channel:${data.channelId}`).emit('new_message', data);
   }
 
   @SubscribeMessage('join_voice')
