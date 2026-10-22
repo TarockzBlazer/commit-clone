@@ -3,11 +3,11 @@ import { generateInviteCode } from './invites.service';
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
 describe('generateInviteCode', () => {
-  it('generates 8 characters from the unambiguous alphabet', () => {
+  it('generates 12 characters from the unambiguous alphabet', () => {
     for (let i = 0; i < 200; i++) {
       const code = generateInviteCode();
-      expect(code).toHaveLength(8);
-      expect(code).toMatch(new RegExp(`^[${ALPHABET}]{8}$`));
+      expect(code).toHaveLength(12);
+      expect(code).toMatch(new RegExp(`^[${ALPHABET}]{12}$`));
     }
   });
 

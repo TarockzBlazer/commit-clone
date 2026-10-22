@@ -4,7 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateInviteDto } from './dto/invite.dto';
 
 const INVITE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-const INVITE_CODE_LENGTH = 8;
+const INVITE_CODE_LENGTH = 12;
 
 /**
  * Invite codes are bearer secrets: use a CSPRNG, never Math.random().

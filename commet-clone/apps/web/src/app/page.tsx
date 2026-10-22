@@ -132,10 +132,10 @@ function AuthChoice() {
                 type="text"
                 value={joinCode}
                 onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                placeholder="Código do convite (ex: ABC123XY)"
+                placeholder="Código do convite (ex: ABC123XY9KLM)"
                 className="w-full px-4 py-2 bg-[var(--bg)] border border-[var(--border-strong)] rounded mb-4 focus:outline-none focus:border-[var(--accent)] text-uppercase"
                 autoFocus
-                maxLength={8}
+                maxLength={12}
               />
               {inviteInfo && (
                 <div className="mb-4 p-3 bg-[var(--surface)] rounded-lg text-sm">

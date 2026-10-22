@@ -2,6 +2,7 @@ import { Controller, Get, Post, Delete, Body, Param, Req, UseGuards, HttpCode, H
 import { InvitesService } from './invites.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateInviteDto, AcceptInviteDto } from './dto/invite.dto';
+import { RateLimit, RateLimitGuard } from '../common/rate-limit.guard';
 
 @Controller('servers/:serverId/invites')
 @UseGuards(JwtAuthGuard)
@@ -34,6 +35,8 @@ export class PublicInvitesController {
   constructor(private readonly invitesService: InvitesService) {}
 
   @Post('validate')
+  @UseGuards(RateLimitGuard)
+  @RateLimit({ windowMs: 60_000, max: 30 })
   async validate(@Body() dto: AcceptInviteDto) {
     const invite = await this.invitesService.findByCode(dto.code);
 
@@ -65,6 +68,8 @@ export class PublicInvitesController {
   }
 
   @Get(':code')
+  @UseGuards(RateLimitGuard)
+  @RateLimit({ windowMs: 60_000, max: 30 })
   async getInfo(@Param('code') code: string) {
     const invite = await this.invitesService.findByCode(code);
 
