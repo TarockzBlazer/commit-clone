@@ -1,12 +1,19 @@
+import { randomInt } from 'node:crypto';
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateInviteDto } from './dto/invite.dto';
 
-function generateInviteCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const INVITE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const INVITE_CODE_LENGTH = 8;
+
+/**
+ * Invite codes are bearer secrets: use a CSPRNG, never Math.random().
+ * randomInt() is uniform over [0, alphabet.length), so there is no modulo bias.
+ */
+export function generateInviteCode(): string {
   let code = '';
-  for (let i = 0; i < 8; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  for (let i = 0; i < INVITE_CODE_LENGTH; i++) {
+    code += INVITE_ALPHABET.charAt(randomInt(0, INVITE_ALPHABET.length));
   }
   return code;
 }
