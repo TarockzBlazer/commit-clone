@@ -54,8 +54,6 @@ export const api = {
       }),
     delete: (id: string) =>
       request<void>(`/servers/${id}`, { method: 'DELETE' }),
-    join: (id: string) =>
-      request<void>(`/servers/${id}/join`, { method: 'POST' }),
     leave: (id: string) =>
       request<void>(`/servers/${id}/leave`, { method: 'POST' }),
     createInvite: (id: string, maxUses?: number, expiresInMinutes?: number) =>
@@ -168,7 +166,6 @@ export interface Invite {
 export interface InviteInfo {
   code: string;
   serverName: string;
-  serverId: string;
   creatorName: string;
   maxUses: number;
   currentUses: number;

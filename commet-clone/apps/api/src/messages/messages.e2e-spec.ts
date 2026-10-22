@@ -173,10 +173,18 @@ describe('MessagesController (e2e)', () => {
         .send({ username: 'othermsg2', email: 'othermsg2@test.com', password: 'password123' });
       const otherToken = otherRes.body.token;
 
-      // Other user joins the server first
+      // Other user joins the server through a valid invite
+      const inviteRes = await request(app.getHttpServer())
+        .post(`/servers/${serverId}/invites`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ maxUses: 1 })
+        .expect(201);
+
       await request(app.getHttpServer())
-        .post(`/servers/${serverId}/join`)
-        .set('Authorization', `Bearer ${otherToken}`);
+        .post('/invites/accept')
+        .set('Authorization', `Bearer ${otherToken}`)
+        .send({ code: inviteRes.body.code })
+        .expect(201);
 
       const msgRes = await request(app.getHttpServer())
         .post(`/channels/${channelId}/messages`)

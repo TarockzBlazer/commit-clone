@@ -216,34 +216,22 @@ describe('ServersController (e2e)', () => {
     });
   });
 
-  describe('/servers/:id/join (POST)', () => {
+  describe('/servers/:id/join (POST) — removed', () => {
     let serverId: string;
 
     beforeEach(async () => {
       const res = await request(app.getHttpServer())
         .post('/servers')
         .set('Authorization', `Bearer ${token}`)
-        .send({ name: 'Joinable Server' });
+        .send({ name: 'No Direct Join Server' });
       serverId = res.body.id;
     });
 
-    it('should join server', () => {
+    it('should not allow joining a server without an invite', () => {
       return request(app.getHttpServer())
         .post(`/servers/${serverId}/join`)
         .set('Authorization', `Bearer ${token}`)
-        .expect(201);
-    });
-
-    it('should allow joining with another user', async () => {
-      const joinRes = await request(app.getHttpServer())
-        .post('/auth/register')
-        .send({ username: 'joiner', email: 'joiner@test.com', password: 'password123' });
-      const joinToken = joinRes.body.token;
-
-      return request(app.getHttpServer())
-        .post(`/servers/${serverId}/join`)
-        .set('Authorization', `Bearer ${joinToken}`)
-        .expect(201);
+        .expect(404);
     });
   });
 
@@ -264,9 +252,17 @@ describe('ServersController (e2e)', () => {
         .send({ username: 'leaver', email: 'leaver@test.com', password: 'password123' });
       const otherToken = otherRes.body.token;
 
+      const inviteRes = await request(app.getHttpServer())
+        .post(`/servers/${serverId}/invites`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ maxUses: 1 })
+        .expect(201);
+
       await request(app.getHttpServer())
-        .post(`/servers/${serverId}/join`)
-        .set('Authorization', `Bearer ${otherToken}`);
+        .post('/invites/accept')
+        .set('Authorization', `Bearer ${otherToken}`)
+        .send({ code: inviteRes.body.code })
+        .expect(201);
 
       return request(app.getHttpServer())
         .post(`/servers/${serverId}/leave`)
@@ -279,6 +275,29 @@ describe('ServersController (e2e)', () => {
         .post(`/servers/${serverId}/leave`)
         .set('Authorization', `Bearer ${token}`)
         .expect(403);
+    });
+  });
+
+  describe('/invites/:code (GET) — public preview', () => {
+    it('should not expose the internal server id', async () => {
+      const serverRes = await request(app.getHttpServer())
+        .post('/servers')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ name: 'Invite Preview Server' })
+        .expect(201);
+
+      const inviteRes = await request(app.getHttpServer())
+        .post(`/servers/${serverRes.body.id}/invites`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ maxUses: 1 })
+        .expect(201);
+
+      const preview = await request(app.getHttpServer())
+        .get(`/invites/${inviteRes.body.code}`)
+        .expect(200);
+
+      expect(preview.body.serverId).toBeUndefined();
+      expect(preview.body.serverName).toBe('Invite Preview Server');
     });
   });
 });

@@ -81,18 +81,6 @@ export class ServersService {
     return { message: 'Server deleted successfully' };
   }
 
-  async join(id: string, userId: string) {
-    const server = await this.prisma.server.findUnique({ where: { id } });
-    if (!server) throw new NotFoundException('Server not found');
-    const existing = await this.prisma.serverMember.findUnique({
-      where: { userId_serverId: { userId, serverId: id } },
-    });
-    if (existing) return { message: 'Already a member' };
-    return this.prisma.serverMember.create({
-      data: { userId, serverId: id, role: 'member' },
-    });
-  }
-
   async leave(id: string, userId: string) {
     const server = await this.prisma.server.findUnique({ where: { id } });
     if (!server) throw new NotFoundException('Server not found');

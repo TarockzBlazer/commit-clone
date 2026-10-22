@@ -33,11 +33,6 @@ export class ServersController {
     return this.serversService.delete(id, req.user.id);
   }
 
-  @Post(':id/join')
-  async join(@Param('id') id: string, @Req() req: any) {
-    return this.serversService.join(id, req.user.id);
-  }
-
   @Post(':id/leave')
   async leave(@Param('id') id: string, @Req() req: any) {
     return this.serversService.leave(id, req.user.id);

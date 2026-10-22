@@ -2,6 +2,10 @@
 
 > **⚠️ Experimental Project** — This is a portfolio project developed with AI assistance to demonstrate full-stack development capabilities. Development is currently **paused**. Not production-ready.
 
+> **No affiliation / Sem afiliação** — This project is **not affiliated with, endorsed by, or sponsored by Commet, Discord Inc., or any other company**. “Commet”, “Discord” and all other product names and trademarks belong to their respective owners. It is a study/portfolio project, not a commercial product. See [DISCLAIMER.md](DISCLAIMER.md).
+>
+> Este projeto **não é afiliado, endossado ou patrocinado pela Commet, Discord Inc. ou qualquer outra empresa**. Nomes e marcas pertencem aos seus respectivos titulares. É um projeto de estudo/portfólio, não um produto comercial.
+
 ---
 
 ## Objective

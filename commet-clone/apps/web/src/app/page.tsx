@@ -52,7 +52,7 @@ function AuthChoice() {
   const [joinCode, setJoinCode] = useState('');
   const [joinError, setJoinError] = useState('');
   const [validatingInvite, setValidatingInvite] = useState(false);
-  const [inviteInfo, setInviteInfo] = useState<{ code: string; serverName: string; serverId: string } | null>(null);
+  const [inviteInfo, setInviteInfo] = useState<{ code: string; serverName: string } | null>(null);
 
   const handleValidateInvite = async () => {
     if (!joinCode.trim()) return;
@@ -69,11 +69,10 @@ function AuthChoice() {
         throw new Error(error.message || 'Invalid invite code');
       }
       const inviteInfo = await response.json();
-      setInviteInfo({ code: joinCode.trim().toUpperCase(), serverName: inviteInfo.serverName, serverId: inviteInfo.serverId });
+      setInviteInfo({ code: joinCode.trim().toUpperCase(), serverName: inviteInfo.serverName });
       setShowJoinServer(false);
       // Store invite code for auto-join after login
       localStorage.setItem('pendingInviteCode', joinCode.trim().toUpperCase());
-      localStorage.setItem('pendingInviteServerId', inviteInfo.serverId);
       // If user is already authenticated, accept the invite immediately
       const token = localStorage.getItem('token');
       if (token) {
@@ -203,6 +202,9 @@ function AuthChoice() {
         <p className="text-center text-[var(--muted)] text-sm mt-6">
           Commet Clone &copy; 2025
         </p>
+        <p className="text-center text-[var(--muted)] text-xs mt-2 max-w-xs mx-auto">
+          Projeto experimental, sem afiliação com Commet, Discord ou qualquer outra empresa.
+        </p>
       </div>
     </div>
   );
@@ -211,11 +213,9 @@ function AuthChoice() {
 const handleLoginSuccess = async () => {
   // Check for pending invite after successful login
   const pendingCode = localStorage.getItem('pendingInviteCode');
-  const pendingServerId = localStorage.getItem('pendingInviteServerId');
   const token = localStorage.getItem('token');
-  if (pendingCode && pendingServerId && token) {
+  if (pendingCode && token) {
     localStorage.removeItem('pendingInviteCode');
-    localStorage.removeItem('pendingInviteServerId');
     try {
       await fetch('http://localhost:4000/invites/accept', {
         method: 'POST',

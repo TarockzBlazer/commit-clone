@@ -186,53 +186,6 @@ describe('ServersService', () => {
     });
   });
 
-  describe('join', () => {
-    it('should join server successfully', async () => {
-      prisma.server.findUnique.mockResolvedValue({ id: 'server-1', name: 'Test Server' });
-      prisma.serverMember.findUnique.mockResolvedValue(null);
-      prisma.serverMember.create.mockResolvedValue({
-        id: 'member-1',
-        userId: 'user-1',
-        serverId: 'server-1',
-        role: 'member',
-        joinedAt: new Date(),
-      });
-
-      const result = await service.join('server-1', 'user-1');
-
-      expect(prisma.server.findUnique).toHaveBeenCalledWith({ where: { id: 'server-1' } });
-      expect(prisma.serverMember.findUnique).toHaveBeenCalledWith({
-        where: { userId_serverId: { userId: 'user-1', serverId: 'server-1' } },
-      });
-      expect(prisma.serverMember.create).toHaveBeenCalledWith({
-        data: { userId: 'user-1', serverId: 'server-1', role: 'member' },
-      });
-      expect(result).toEqual({
-        id: 'member-1',
-        userId: 'user-1',
-        serverId: 'server-1',
-        role: 'member',
-        joinedAt: expect.any(Date),
-      });
-    });
-
-    it('should return already a member message if already joined', async () => {
-      prisma.server.findUnique.mockResolvedValue({ id: 'server-1' });
-      prisma.serverMember.findUnique.mockResolvedValue({ id: 'member-1' });
-
-      const result = await service.join('server-1', 'user-1');
-
-      expect(result).toEqual({ message: 'Already a member' });
-      expect(prisma.serverMember.create).not.toHaveBeenCalled();
-    });
-
-    it('should throw NotFoundException if server not found', async () => {
-      prisma.server.findUnique.mockResolvedValue(null);
-
-      await expect(service.join('server-1', 'user-1')).rejects.toThrow('Server not found');
-    });
-  });
-
   describe('leave', () => {
     it('should leave server successfully', async () => {
       prisma.server.findUnique.mockResolvedValue({ id: 'server-1', ownerId: 'user-2' });

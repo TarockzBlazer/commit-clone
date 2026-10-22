@@ -920,6 +920,12 @@ const handleKeyDown = (e: React.KeyboardEvent) => {
             </button>
           </div>
         )}
+
+        <div className="p-3 border-t border-[var(--border)]">
+          <p className="text-[10px] leading-tight text-[var(--muted)] text-center">
+            Projeto experimental, sem afiliação com Commet, Discord ou qualquer outra empresa.
+          </p>
+        </div>
       </aside>
     </div>
   );

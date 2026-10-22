@@ -50,7 +50,6 @@ export class PublicInvitesController {
     return {
       code: invite.code,
       serverName: invite.server.name,
-      serverId: invite.serverId,
       creatorName: invite.creator.username,
       maxUses: invite.maxUses,
       currentUses: invite.currentUses,
@@ -68,10 +67,20 @@ export class PublicInvitesController {
   @Get(':code')
   async getInfo(@Param('code') code: string) {
     const invite = await this.invitesService.findByCode(code);
+
+    // A public invite preview must not outlive the invite itself, and it never
+    // needs to reveal the internal server id. Joining is only possible through
+    // POST /invites/accept, which validates and consumes the code atomically.
+    if (invite.expiresAt && invite.expiresAt < new Date()) {
+      throw new BadRequestException('Invite has expired');
+    }
+    if (invite.currentUses >= invite.maxUses) {
+      throw new BadRequestException('Invite has reached maximum uses');
+    }
+
     return {
       code: invite.code,
       serverName: invite.server.name,
-      serverId: invite.serverId,
       creatorName: invite.creator.username,
       maxUses: invite.maxUses,
       currentUses: invite.currentUses,
